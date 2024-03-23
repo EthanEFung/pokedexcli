@@ -1,4 +1,4 @@
-package pokecache
+package inmemorycache
 
 import (
 	"testing"
@@ -8,8 +8,8 @@ import (
 func TestCache(t *testing.T) {
 	interval := time.Millisecond * 10
 	cache := NewCache(interval)
-	if cache.cache == nil {
-		t.Error("Cache is nil")
+	if cache == nil {
+		t.Errorf("Cache is nil")
 	}
 }
 
@@ -26,9 +26,6 @@ func TestCache_Add(t *testing.T) {
 
 	for _, c := range cases {
 		cache.Add(c.key, c.value)
-		if _, ok := cache.cache[c.key]; !ok {
-			t.Error("Key not added to cache")
-		}
 		actual, err := cache.Get(c.key)
 		if err != true {
 			t.Error("Key not found in cache")

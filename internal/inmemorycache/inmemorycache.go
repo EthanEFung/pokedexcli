@@ -1,8 +1,10 @@
-package pokecache
+package inmemorycache
 
 import (
 	"sync"
 	"time"
+
+	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
 
 type Cache struct {
@@ -15,13 +17,13 @@ type cacheEntry struct {
 	createdAt time.Time
 }
 
-func NewCache(interval time.Duration) Cache {
+func NewCache(interval time.Duration) pokeapi.Cache {
 	c := Cache{
 		cache: make(map[string]cacheEntry),
 		mux:   &sync.Mutex{},
 	}
 	go c.reapLoop(interval)
-	return c
+	return &c
 }
 
 func (c *Cache) Add(key string, value []byte) {

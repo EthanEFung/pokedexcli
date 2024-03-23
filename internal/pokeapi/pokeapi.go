@@ -6,23 +6,26 @@ import (
 	"io"
 	"net/http"
 	"time"
-
-	"github.com/ethanefung/pokedexcli/internal/pokecache"
 )
 
 const baseURL = "https://pokeapi.co/api/v2"
 
+type Cache interface {
+	Add(key string, value []byte)
+	Get(key string) ([]byte, bool)
+}
+
 type Client struct {
-	cache      pokecache.Cache
+	cache      Cache
 	httpClient http.Client
 }
 
-func NewClient(cacheInterval time.Duration) Client {
+func NewClient(cacheInterval time.Duration, cache Cache) Client {
 	return Client{
 		httpClient: http.Client{
 			Timeout: time.Minute,
 		},
-		cache: pokecache.NewCache(cacheInterval),
+		cache: cache,
 	}
 }
 
@@ -32,6 +35,7 @@ func NewClient(cacheInterval time.Duration) Client {
 func (c *Client) GetJSON(url string, v any) error {
 	// check the cache
 	if b, ok := c.cache.Get(url); ok {
+		// fmt.Println("cached results")
 		err := json.Unmarshal(b, v)
 		if err != nil {
 			return err

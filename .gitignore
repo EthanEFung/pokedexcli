@@ -1,1 +1,4 @@
 pokedexcli
+
+# add filebased cache stuff
+internal/filebasedcache/ledger.txt
