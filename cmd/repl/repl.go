@@ -8,7 +8,6 @@ import (
 )
 
 func startRepl(cfg *config) {
-
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("> ")
