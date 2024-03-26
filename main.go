@@ -3,25 +3,22 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
-	"github.com/ethanefung/pokedexcli/internal/pokeapi"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var cacheType string
-
-type config struct {
-	pokeapiClient       pokeapi.Client
-	caughtPokemon       map[string]pokeapi.Pokemon
-	nextLocationURL     *string
-	prevLocationURL     *string
-	nextLocationAreaURL *string
-	prevLocationAreaURL *string
-}
 
 func init() {
 	flag.StringVar(&cacheType, "cache", "filebased", "the type of cache to use for the application: 'inmemory' or 'filebased'. defaults to 'filebased'")
 }
 
 func main() {
-	fmt.Println("Hello, World!")
+	flag.Parse()
+	p := tea.NewProgram(initialModel(cacheType))
+	if _, err := p.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+		os.Exit(1)
+	}
 }

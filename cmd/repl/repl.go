@@ -89,6 +89,11 @@ func getCommands() map[string]cliCommand {
 			desc:     "displays the details of a pokemon",
 			callback: commandInspect,
 		},
+		"species": {
+			name:     "species",
+			desc:     "displays the species of a pokemon",
+			callback: commandSpecies,
+		},
 		"sprite": {
 			name:     "sprite",
 			desc:     "displays the sprite of a pokemon in ascii art",
