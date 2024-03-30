@@ -16,7 +16,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	p := tea.NewProgram(initialModel(cacheType))
+	p := tea.NewProgram(initialModel(cacheType), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v", err)
 		os.Exit(1)

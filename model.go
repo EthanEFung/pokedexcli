@@ -7,20 +7,37 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/ethanefung/pokedexcli/internal/filebasedcache"
 	"github.com/ethanefung/pokedexcli/internal/inmemorycache"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
 
+var docStyle = lipgloss.NewStyle().Margin(1).Border(lipgloss.NormalBorder())
+
 type model struct {
 	pokeapiClient  pokeapi.Client
+	cursor         int
 	nextPokemonURL *string
 	prevPokemonURL *string
 	nextSpeciesURL *string
 	prevSpeciesURL *string
 	last           string
+	list           list.Model
+	detail         tea.Model
+	focused        tea.Model
+	err            error
 }
+
+type listItem struct {
+	title string
+}
+
+func (li listItem) Title() string       { return li.title }
+func (li listItem) Description() string { return "" }
+func (li listItem) FilterValue() string { return li.title }
 
 func initialModel(cacheType string) *model {
 	fpath, err := filepath.Abs("./internal/filebasedcache/ledger.txt")
@@ -43,30 +60,99 @@ func initialModel(cacheType string) *model {
 	} else if cacheType == "inmemory" {
 		cache = inmemorycache.NewCache(time.Hour * 2)
 	}
+	client := pokeapi.NewClient(time.Hour, cache)
+	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	deets := detail{}
 
 	return &model{
-		pokeapiClient: pokeapi.NewClient(time.Hour, cache),
+		pokeapiClient: client,
+		list:          l,
+		detail:        deets,
+		cursor:        0,
 	}
 }
 
 func (c *model) Init() tea.Cmd {
-	return nil
+	return tea.Batch(
+		func() tea.Msg {
+			list, err := c.pokeapiClient.GetPokemonList(nil)
+			if err != nil {
+				return err // feels weird
+			}
+			return list // to return different types but this is new, so maybe this is just a learning moment
+		},
+		func() tea.Msg {
+			p, err := c.pokeapiClient.GetPokemon("bulbasaur")
+			if err != nil {
+				return nil
+			}
+			return p
+		})
 }
 
 func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := []tea.Cmd{}
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-
-		if key.Matches(msg, DefaultKeyMap.Quit) {
-			return c, tea.Quit
+	case error:
+		c.err = msg
+	case pokeapi.PokemonList:
+		items := []list.Item{}
+		for _, p := range msg.Results {
+			items = append(items, listItem{p.Name})
 		}
-		c.last = msg.String()
-
+		cmd := c.list.SetItems(items)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	case pokeapi.Pokemon:
+		c.detail, cmd = c.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	case tea.WindowSizeMsg:
+		h, v := docStyle.GetFrameSize()
+		c.list.SetSize(msg.Width-h, msg.Height-v)
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, DefaultKeyMap.Quit):
+			return c, tea.Quit
+		case key.Matches(msg, DefaultKeyMap.Down):
+			c.last = msg.String()
+			c.list.CursorDown()
+		case key.Matches(msg, DefaultKeyMap.Up):
+			c.last = msg.String()
+			c.list.CursorUp()
+		case key.Matches(msg, DefaultKeyMap.Left):
+			c.last = msg.String()
+		case key.Matches(msg, DefaultKeyMap.Right):
+			c.last = msg.String()
+		}
 	}
 
-	return c, nil
+	if c.list.Cursor() != c.cursor {
+		c.cursor = c.list.Cursor()
+		item := c.list.Items()[c.cursor]
+		name := item.FilterValue()
+		cmds = append(cmds, func() tea.Msg {
+			p, err := c.pokeapiClient.GetPokemon(name)
+			if err != nil {
+				return err
+			}
+			return p
+		})
+	}
+
+	return c, tea.Batch(cmds...)
 }
 
 func (c *model) View() string {
-	return c.last
+	if c.err != nil {
+		return fmt.Sprintf("Uh oh, something happened: %+v", c.err)
+	}
+	listView := docStyle.Render(c.list.View())
+	deetsView := docStyle.Render(c.detail.View())
+	view := lipgloss.JoinHorizontal(lipgloss.Left, listView, deetsView)
+
+	return view
 }

@@ -114,6 +114,11 @@ func getCommands() map[string]cliCommand {
 			desc:     "removes a pokemon from collection",
 			callback: commandRelease,
 		},
+		"list": {
+			name:     "list",
+			desc:     "list some pokemon in order",
+			callback: commandList,
+		},
 	}
 }
 

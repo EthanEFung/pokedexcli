@@ -21,6 +21,8 @@ type config struct {
 	prevLocationURL     *string
 	nextLocationAreaURL *string
 	prevLocationAreaURL *string
+	nextPokemonListURL  *string
+	prevPokemonListURL  *string
 }
 
 func init() {

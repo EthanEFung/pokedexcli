@@ -31,3 +31,16 @@ func commandInspect(cfg *config, args ...string) error {
 
 	return nil
 }
+
+func commandList(cfg *config, args ...string) error {
+	res, err := cfg.pokeapiClient.GetPokemonList(cfg.nextPokemonListURL)
+	if err != nil {
+		return err
+	}
+	for _, pokemon := range res.Results {
+		fmt.Printf(" - %s\n", pokemon.Name)
+	}
+	cfg.nextPokemonListURL = res.Next
+	cfg.prevPokemonListURL = res.Previous
+	return nil
+}
