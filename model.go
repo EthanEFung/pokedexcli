@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"image"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"time"
@@ -46,12 +48,12 @@ func initialModel(cacheType string) *model {
 		os.Exit(1)
 	}
 	dirpath, err := filepath.Abs("./internal/filebasedcache/files")
-	ledgerFile, err := os.OpenFile(fpath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	ledgerFile, err := os.OpenFile(fpath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0o600)
+
 	if err != nil {
 		fmt.Printf("could not open file in write mode %v", err)
 		os.Exit(1)
 	}
-	defer ledgerFile.Close()
 
 	cache := filebasedcache.NewCache(dirpath, ledgerFile)
 	if cacheType != "inmemory" && cacheType != "filebased" {
@@ -77,9 +79,9 @@ func (c *model) Init() tea.Cmd {
 		func() tea.Msg {
 			list, err := c.pokeapiClient.GetPokemonList(nil)
 			if err != nil {
-				return err // feels weird
+				return err // feels weird to return different
 			}
-			return list // to return different types but this is new, so maybe this is just a learning moment
+			return list // types but this is new, so maybe this is just a learning moment
 		},
 		func() tea.Msg {
 			p, err := c.pokeapiClient.GetPokemon("bulbasaur")
@@ -87,6 +89,13 @@ func (c *model) Init() tea.Cmd {
 				return nil
 			}
 			return p
+		},
+		func() tea.Msg {
+			ps, err := c.pokeapiClient.GetPokemonSpecies("bulbasaur")
+			if err != nil {
+				return nil
+			}
+			return ps
 		})
 }
 
@@ -110,6 +119,25 @@ func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+		cmd = func() tea.Msg {
+			img, err := c.pokeapiClient.GetSprite(msg.Sprites.FrontDefault)
+			if err != nil {
+				return err
+			}
+			return img
+		}
+		cmds = append(cmds, cmd)
+	case pokeapi.PokemonSpecies:
+		c.detail, cmd = c.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	case image.Image:
+		// currently the only image that is processed is for the details view
+		c.detail, cmd = c.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		c.list.SetSize(msg.Width-h, msg.Height-v)
@@ -118,15 +146,9 @@ func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, DefaultKeyMap.Quit):
 			return c, tea.Quit
 		case key.Matches(msg, DefaultKeyMap.Down):
-			c.last = msg.String()
 			c.list.CursorDown()
 		case key.Matches(msg, DefaultKeyMap.Up):
-			c.last = msg.String()
 			c.list.CursorUp()
-		case key.Matches(msg, DefaultKeyMap.Left):
-			c.last = msg.String()
-		case key.Matches(msg, DefaultKeyMap.Right):
-			c.last = msg.String()
 		}
 	}
 
@@ -134,13 +156,22 @@ func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.cursor = c.list.Cursor()
 		item := c.list.Items()[c.cursor]
 		name := item.FilterValue()
-		cmds = append(cmds, func() tea.Msg {
+		cmd := func() tea.Msg {
 			p, err := c.pokeapiClient.GetPokemon(name)
 			if err != nil {
 				return err
 			}
 			return p
-		})
+		}
+		cmds = append(cmds, cmd)
+		cmd = func() tea.Msg {
+			ps, err := c.pokeapiClient.GetPokemonSpecies(name)
+			if err != nil {
+				return err
+			}
+			return ps
+		}
+		cmds = append(cmds, cmd)
 	}
 
 	return c, tea.Batch(cmds...)
