@@ -21,13 +21,12 @@ var docStyle = lipgloss.NewStyle().Margin(1).Border(lipgloss.NormalBorder())
 
 type model struct {
 	pokeapiClient  pokeapi.Client
-	cursor         int
 	nextPokemonURL *string
 	prevPokemonURL *string
 	nextSpeciesURL *string
 	prevSpeciesURL *string
-	last           string
 	list           list.Model
+	items          []list.Item
 	detail         tea.Model
 	focused        tea.Model
 	err            error
@@ -63,40 +62,20 @@ func initialModel(cacheType string) *model {
 		cache = inmemorycache.NewCache(time.Hour * 2)
 	}
 	client := pokeapi.NewClient(time.Hour, cache)
-	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	items := []list.Item{}
+	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
 	deets := detail{}
 
 	return &model{
 		pokeapiClient: client,
 		list:          l,
 		detail:        deets,
-		cursor:        0,
+		items:         items,
 	}
 }
 
 func (c *model) Init() tea.Cmd {
-	return tea.Batch(
-		func() tea.Msg {
-			list, err := c.pokeapiClient.GetPokemonList(nil)
-			if err != nil {
-				return err // feels weird to return different
-			}
-			return list // types but this is new, so maybe this is just a learning moment
-		},
-		func() tea.Msg {
-			p, err := c.pokeapiClient.GetPokemon("bulbasaur")
-			if err != nil {
-				return nil
-			}
-			return p
-		},
-		func() tea.Msg {
-			ps, err := c.pokeapiClient.GetPokemonSpecies("bulbasaur")
-			if err != nil {
-				return nil
-			}
-			return ps
-		})
+	return getPokemonList(c.pokeapiClient, nil)
 }
 
 func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -106,26 +85,23 @@ func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case error:
 		c.err = msg
 	case pokeapi.PokemonList:
-		items := []list.Item{}
 		for _, p := range msg.Results {
-			items = append(items, listItem{p.Name})
+			c.items = append(c.items, listItem{p.Name})
 		}
-		cmd := c.list.SetItems(items)
+		cmd := c.list.SetItems(c.items)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+		selected := c.list.SelectedItem()
+		cmd = getPokemonDetails(c.pokeapiClient, selected.FilterValue())
+		cmds = append(cmds, cmd)
+		c.nextPokemonURL = msg.Next
 	case pokeapi.Pokemon:
 		c.detail, cmd = c.detail.Update(msg)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
-		cmd = func() tea.Msg {
-			img, err := c.pokeapiClient.GetSprite(msg.Sprites.FrontDefault)
-			if err != nil {
-				return err
-			}
-			return img
-		}
+		cmd = getPokemonSprite(c.pokeapiClient, msg.Sprites.FrontDefault)
 		cmds = append(cmds, cmd)
 	case pokeapi.PokemonSpecies:
 		c.detail, cmd = c.detail.Update(msg)
@@ -147,31 +123,19 @@ func (c *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return c, tea.Quit
 		case key.Matches(msg, DefaultKeyMap.Down):
 			c.list.CursorDown()
+			selected := c.list.SelectedItem()
+			cmd := getPokemonDetails(c.pokeapiClient, selected.FilterValue())
+			cmds = append(cmds, cmd)
+			if c.list.Index() >= len(c.list.Items())-1 {
+				cmd = getPokemonList(c.pokeapiClient, c.nextPokemonURL)
+				cmds = append(cmds, cmd)
+			}
 		case key.Matches(msg, DefaultKeyMap.Up):
 			c.list.CursorUp()
+			selected := c.list.SelectedItem()
+			cmd := getPokemonDetails(c.pokeapiClient, selected.FilterValue())
+			cmds = append(cmds, cmd)
 		}
-	}
-
-	if c.list.Cursor() != c.cursor {
-		c.cursor = c.list.Cursor()
-		item := c.list.Items()[c.cursor]
-		name := item.FilterValue()
-		cmd := func() tea.Msg {
-			p, err := c.pokeapiClient.GetPokemon(name)
-			if err != nil {
-				return err
-			}
-			return p
-		}
-		cmds = append(cmds, cmd)
-		cmd = func() tea.Msg {
-			ps, err := c.pokeapiClient.GetPokemonSpecies(name)
-			if err != nil {
-				return err
-			}
-			return ps
-		}
-		cmds = append(cmds, cmd)
 	}
 
 	return c, tea.Batch(cmds...)
@@ -186,4 +150,42 @@ func (c *model) View() string {
 	view := lipgloss.JoinHorizontal(lipgloss.Left, listView, deetsView)
 
 	return view
+}
+
+func getPokemonDetails(client pokeapi.Client, name string) tea.Cmd {
+	return tea.Batch(
+		func() tea.Msg {
+			p, err := client.GetPokemon(name)
+			if err != nil {
+				return err
+			}
+			return p
+		},
+		func() tea.Msg {
+			ps, err := client.GetPokemonSpecies(name)
+			if err != nil {
+				return err
+			}
+			return ps
+		})
+}
+
+func getPokemonList(client pokeapi.Client, next *string) tea.Cmd {
+	return func() tea.Msg {
+		list, err := client.GetPokemonList(next)
+		if err != nil {
+			return err // feels weird to return different
+		}
+		return list // types but this is new, so maybe this is just a learning moment
+	}
+}
+
+func getPokemonSprite(client pokeapi.Client, url string) tea.Cmd {
+	return func() tea.Msg {
+		img, err := client.GetSprite(url)
+		if err != nil {
+			return err
+		}
+		return img
+	}
 }
