@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 )
@@ -63,66 +62,34 @@ func (l *Ledger) Read() {
 }
 
 // Restore replays the history of the ledger returning the log entries
-// the last n writes or reads or that have been persisted (not evicted)
-
-func (l *Ledger) Restore(n int) []LedgerEntry {
-	// here what matters is the time that the entry was created
-	// and msg, because the msg will determine what entries are returned
-
-	// Idea one
-	// the data structures that we would need is
-	// a binary tree that represents the history over time
-	// and a hashmap that holds reference to the url and the time in which the entry was made
-
-	// writes would traverse the tree and insert the nodes in logN time
-	// evicts would look up the time in the hashmap, find the parent, and assign the children
-	// of the evicted node
-	// reads would first evict the old node and then append the new node.
-
-	// or it could be as simple as having a hashmap of urls to indices
-	// and once it's done we loop over all the indices that were created skipping over evicted numbers
-	// create another hashmap that uses indices as the key and entries as the
-
-	entryMap := make(map[int]LedgerEntry)
-	indices := make(map[string]int)
-	index := 0
-
+func (l *Ledger) Restore(c *Cache) error {
 	for l.Scan() {
 		entry := l.Entry()
+		url := entry.Url
 		switch entry.Msg {
 		case WRITE:
-			indices[entry.Url] = index
-			entryMap[index] = entry
-			index++
-		case EVICT:
-			i, ok := indices[entry.Url]
-			if !ok {
-				log.Fatalf("attempted to evict a ledger entry not previously created: %+v", entry)
+			// just an update?
+			if el, ok := c.elements[url]; ok {
+				el.Value = entry
+				c.list.MoveToFront(el)
+				continue
 			}
-			delete(entryMap, i)
-			delete(indices, entry.Url)
+
+			for c.list.Len() >= c.capacity {
+				last := c.list.Back()
+				lastEntry := last.Value.(LedgerEntry)
+				delete(c.elements, lastEntry.Url)
+				c.list.Remove(last)
+			}
+
+			c.elements[url] = c.list.PushFront(entry)
 		case READ:
-			i, ok := indices[entry.Url]
-			if !ok {
-				log.Fatalf("attempted to read a missing ledger entry: %+v", entry)
+			if el, ok := c.elements[url]; ok {
+				c.list.MoveToFront(el)
 			}
-			delete(entryMap, i)
-			indices[entry.Url] = index // replacing old value
-			entryMap[index] = entry
-			index++
 		}
 	}
-	entries := []LedgerEntry{}
-	for i := 0; i < index; i++ {
-		if entry, ok := entryMap[i]; ok {
-			entries = append(entries, entry)
-		}
-	}
-	// sliding window algorithm?
-	if len(entries) < n {
-		return entries
-	}
-	return entries[len(entries)-n:]
+	return nil
 }
 
 func (l *Ledger) Parse(data []byte) (LedgerEntry, error) {

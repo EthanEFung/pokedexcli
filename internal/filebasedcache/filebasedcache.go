@@ -1,10 +1,12 @@
 package filebasedcache
 
 import (
+	"container/list"
 	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
@@ -15,11 +17,12 @@ var (
 )
 
 type Cache struct {
-	filenames map[string]string
-	ledger    *Ledger
-	list      *List
-	dirpath   string
-	// TODO: should we add a mux here?
+	ledger   *Ledger
+	list     *list.List               // doubly linked list
+	elements map[string]*list.Element // elements of the list
+	mux      *sync.Mutex
+	capacity int
+	dirpath  string
 }
 
 // NewCache returns a filebasedcache that satisfies the interface of the
@@ -27,16 +30,20 @@ type Cache struct {
 // a ledger which holds reference to a file path and a directory path.
 func NewCache(dirpath string, ledgerFile *os.File) pokeapi.Cache {
 	ledger := NewLedger(ledgerFile)
-	entries := ledger.Restore(ledgerCapacity)
-	list := NewList(ledgerCapacity)
-	list.Setup(entries)
-
-	return &Cache{
-		dirpath:   dirpath,
-		ledger:    ledger,
-		list:      list,
-		filenames: make(map[string]string),
+	c := &Cache{
+		dirpath:  dirpath,
+		ledger:   ledger,
+		capacity: ledgerCapacity,
+		list:     list.New(),
+		elements: make(map[string]*list.Element),
+		mux:      &sync.Mutex{},
 	}
+
+	err := ledger.Restore(c)
+	if err != nil {
+		log.Fatalf("error occured restoring cache from ledger %s", err)
+	}
+	return c
 }
 
 // Add will add the url and data response to the cache. Internally, it interacts with the
@@ -44,18 +51,34 @@ func NewCache(dirpath string, ledgerFile *os.File) pokeapi.Cache {
 // capacity. Otherwise, it checks the least recently updated (LRU) entry, and removes the lru file.
 // At which point, the cache is fine to write to, and the url and data is persisted.
 func (c *Cache) Add(url string, data []byte) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	// just an update?
+	if el, ok := c.elements[url]; ok {
+		prevEntry := el.Value.(LedgerEntry)
+		entry := LedgerEntry{
+			Msg:      WRITE,
+			Url:      prevEntry.Url,
+			Filename: prevEntry.Filename,
+		}
+		c.ledger.Log(entry)
+		el.Value = entry
+
+		c.list.MoveToFront(el)
+		return
+	}
 
 	// insert file
 	var filename string
 	var isUniqFilename bool
 	var attempts int
-	// we use the ledgers IsUniq method because we don't want to add a hash that has been used
+	// we use the ledgers isUniqFilename because we don't want to add a hash that has been used
 	// that already has been written to the ledger
-	for c.ledger.IsUniq(filename) == false && attempts < 20 {
+	for isUniqFilename == false && attempts < 20 {
 		filename = randSeq(16)
 		isUniqFilename = true
-		for _, name := range c.filenames {
-			if name == filename {
+		for _, el := range c.elements {
+			if filename == el.Value.(LedgerEntry).Filename {
 				isUniqFilename = false
 				break
 			}
@@ -64,6 +87,17 @@ func (c *Cache) Add(url string, data []byte) {
 	}
 	if isUniqFilename == false {
 		log.Fatalf("attempted to assign a filename but failed")
+	}
+
+	for c.list.Len() >= c.capacity {
+		last := c.list.Back()
+		lEntry := last.Value.(LedgerEntry)
+		lfPath := filepath.Join(c.dirpath, lEntry.Filename)
+		if err := os.Remove(lfPath); err != nil {
+			log.Fatalf("attempted to remove a file that does not exist %s", lEntry)
+		}
+		delete(c.elements, last.Value.(LedgerEntry).Url)
+		c.list.Remove(last)
 	}
 
 	// it's time to write the file
@@ -84,71 +118,31 @@ func (c *Cache) Add(url string, data []byte) {
 		Filename: filename,
 		Url:      url,
 	}
-	c.list.Remove(writeEntry)
-	c.list.Push(writeEntry)
 	c.ledger.Log(writeEntry)
 
-	if c.list.Full() {
-		if prev, exists := c.list.Pop(); exists {
-			fPath := filepath.Join(c.dirpath, prev.Filename)
-			if err := os.Remove(fPath); err != nil {
-				log.Fatalf("attempted to remove a file that does not exist")
-			}
-			entry := LedgerEntry{
-				Msg:      EVICT,
-				Url:      prev.Url,
-				Filename: prev.Filename,
-			}
-			c.ledger.Log(entry)
-		}
-	}
+	c.elements[url] = c.list.PushFront(writeEntry)
 }
 
 // Get will look for the data and return the data that was stored by the given url.
 // This pointer receiver will return boolean indicating if the data was found.
 func (c *Cache) Get(url string) ([]byte, bool) {
-	var found bool
-	var entry LedgerEntry
-
-	c.list.Reset()
-	for c.list.Scan() {
-		entry = c.list.Entry()
-		if entry.Url == url {
-			found = true
-			break
-		}
-	}
-
-	if found {
-		fPath := filepath.Join(c.dirpath, entry.Filename)
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	if el, ok := c.elements[url]; ok {
+		fName := el.Value.(LedgerEntry).Filename
+		fPath := filepath.Join(c.dirpath, fName)
 		data, err := os.ReadFile(fPath)
 		if err != nil {
 			log.Fatalf("could not read file %s: %v", fPath, err)
 		}
-
 		readEntry := LedgerEntry{
 			Msg:      READ,
-			Filename: entry.Filename,
+			Filename: fName,
 			Url:      url,
 		}
-		c.list.Remove(readEntry)
-		c.list.Push(readEntry)
 		c.ledger.Log(readEntry)
+		c.list.MoveToFront(el)
 
-		if c.list.Full() {
-			if prev, exists := c.list.Pop(); exists {
-				fPath := filepath.Join(c.dirpath, prev.Filename)
-				if err := os.Remove(fPath); err != nil {
-					log.Fatalf("attempted to remove a file that does not exist")
-				}
-				evictEntry := LedgerEntry{
-					Msg:      EVICT,
-					Url:      prev.Url,
-					Filename: prev.Filename,
-				}
-				c.ledger.Log(evictEntry)
-			}
-		}
 		return data, true
 	}
 
