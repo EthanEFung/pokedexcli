@@ -14,6 +14,7 @@ import (
 )
 
 type detail struct {
+	err               error
 	name              string
 	no                int
 	description       string
@@ -87,8 +88,12 @@ var pTypeStylesMap = map[string]pTypeStyle{
 }
 
 func (d detail) Init() tea.Cmd { return nil }
+
 func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	d.err = nil
 	switch msg := msg.(type) {
+	case error:
+		d.err = msg
 	case pokeapi.Pokemon:
 		d.name = msg.Name
 		d.no = msg.ID
@@ -118,7 +123,11 @@ func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return d, nil
 }
+
 func (d detail) View() string {
+	if d.err != nil {
+		return fmt.Sprintf("Error: %v", d.err)
+	}
 	var s string
 	s += fmt.Sprintf("No #%04d %s\n", d.no, toStartCase(d.name))
 	if d.asciiSprite != "" {
