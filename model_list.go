@@ -9,6 +9,8 @@ import (
 	"github.com/ethanefung/pokedexcli/internal/soundex"
 )
 
+var encoder = soundex.NewSoundexEncoder()
+
 type pokelist struct {
 	err    error
 	list   list.Model
@@ -23,10 +25,21 @@ type item struct {
 
 func (i item) Title() string       { return i.title }
 func (i item) Description() string { return "" }
-func (i item) FilterValue() string { return i.title }
+func (i item) FilterValue() string { return i.code }
 
 func (pl pokelist) Init() tea.Cmd {
 	return nil
+}
+
+func initializePokelist(client pokeapi.Client) *pokelist {
+	items := []list.Item{}
+	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	l.Filter = filterFunc
+	return &pokelist{
+		list:   l,
+		items:  items,
+		client: client,
+	}
 }
 
 func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -71,6 +84,38 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (fl pokelist) View() string {
 	return fl.list.View()
+}
+
+func filterFunc(term string, items []string) []list.Rank {
+	ranks := []list.Rank{}
+	code := encoder.Encode(term)
+	// fmt.Println(code)
+
+	for i, icode := range items {
+		if code[0] != icode[0] {
+			continue
+		}
+		complete := true
+		for j, c := range code {
+			if c == '0' {
+				break
+			}
+			if rune(icode[j]) != c {
+				complete = false
+				break
+			}
+		}
+		if complete == false {
+			continue
+		}
+
+		ranks = append(ranks, list.Rank{
+			Index:          i,
+			MatchedIndexes: []int{},
+		})
+
+	}
+	return ranks
 }
 
 func getPokemonDetails(client pokeapi.Client, name string) tea.Cmd {

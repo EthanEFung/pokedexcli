@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	// "github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/ethanefung/pokedexcli/internal/filebasedcache"
@@ -51,13 +49,7 @@ func initialModel(cacheType string) *model {
 	}
 	client := pokeapi.NewClient(time.Hour, cache)
 
-	items := []list.Item{}
-	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	pokelist := &pokelist{
-		list:   l,
-		items:  items,
-		client: client,
-	}
+	pokelist := initializePokelist(client)
 
 	deets := detail{}
 	return &model{
