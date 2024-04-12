@@ -14,18 +14,17 @@ import (
 )
 
 type detail struct {
-	err               error
-	name              string
-	no                int
-	description       string
-	descriptions      []string
-	descriptionCursor int
-	asciiSprite       string
-	height            string
-	weight            string
-	types             []string
-	stats             stats
-	evolutions        []string
+	err          error
+	no           int
+	description  string
+	asciiSprite  string
+	height       string
+	weight       string
+	name         string
+	evolutions   []string
+	types        []string
+	descriptions []string
+	stats        stats
 }
 
 type stats struct {
@@ -125,7 +124,7 @@ func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (d detail) View() string {
-	if d.err != nil {
+	if d.err == ErrPokemon {
 		return fmt.Sprintf("Error: %v", d.err)
 	}
 	var s string
@@ -143,7 +142,12 @@ func (d detail) View() string {
 	s += "height: " + d.height + "\n"
 	s += "weight: " + d.weight + "\n\n"
 	s += strings.Repeat("-", 64) + "\n\n"
-	desc := wordwrap.String(d.description, 62)
+	var desc string
+	if d.err == ErrSpecies {
+		desc = "Error getting species"
+	} else {
+		desc = wordwrap.String(d.description, 62)
+	}
 	s += desc + "\n"
 
 	return s

@@ -2,7 +2,7 @@ Abomasnow
 Abra
 Absol
 Accelgor
-Aegislash
+Aegislash Shield
 Aerodactyl
 Aggron
 Aipom
@@ -49,8 +49,8 @@ Banette
 Barbaracle
 Barboach
 Barraskewda
-Basculegion
-Basculin
+Basculegion Male
+Basculin Red Striped
 Bastiodon
 Baxcalibur
 Bayleef
@@ -130,8 +130,8 @@ Cherubi
 Chesnaught
 Chespin
 Chewtle
-Chi - Yu
-Chien - Pao
+Chi-Yu
+Chien-Pao
 Chikorita
 Chimchar
 Chimecho
@@ -186,7 +186,7 @@ Cyclizar
 Cyndaquil
 Dachsbun
 Darkrai
-Darmanitan
+Darmanitan Standard
 Dartrix
 Darumaka
 Decidueye
@@ -196,7 +196,7 @@ Deino
 Delcatty
 Delibird
 Delphox
-Deoxys
+Deoxys Normal
 Dewgong
 Dewott
 Dewpider
@@ -248,7 +248,7 @@ Dwebble
 Eelektrik
 Eelektross
 Eevee
-Eiscue
+Eiscue Ice
 Ekans
 Eldegoss
 Electabuzz
@@ -260,7 +260,7 @@ Elgyem
 Emboar
 Emolga
 Empoleon
-Enamorus
+Enamorus Incarnate
 Entei
 Escavalier
 Espathra
@@ -285,7 +285,7 @@ Fidough
 Finizen
 Finneon
 Flaaffy
-Flabébé
+Flabebe
 Flamigo
 Flapple
 Flareon
@@ -328,7 +328,7 @@ Gible
 Gigalith
 Gimmighoul
 Girafarig
-Giratina
+Giratina Altered
 Glaceon
 Glalie
 Glameow
@@ -354,7 +354,7 @@ Gothita
 Gothitelle
 Gothorita
 Gouging Fire
-Gourgeist
+Gourgeist Average
 Grafaiai
 Granbull
 Grapploct
@@ -377,7 +377,7 @@ Gumshoos
 Gurdurr
 Guzzlord
 Gyarados
-Hakamo - o
+Hakamo-o
 Happiny
 Hariyama
 Hatenna
@@ -397,7 +397,7 @@ Hippowdon
 Hitmonchan
 Hitmonlee
 Hitmontop
-Ho - Oh
+Ho-Oh
 Honchkrow
 Honedge
 Hoopa
@@ -415,7 +415,7 @@ Igglybuff
 Illumise
 Impidimp
 Incineroar
-Indeedee
+Indeedee Male
 Infernape
 Inkay
 Inteleon
@@ -430,7 +430,7 @@ Iron Thorns
 Iron Treads
 Iron Valiant
 Ivysaur
-Jangmo - o
+Jangmo-o
 Jellicent
 Jigglypuff
 Jirachi
@@ -446,7 +446,7 @@ Kangaskhan
 Karrablast
 Kartana
 Kecleon
-Keldeo
+Keldeo Ordinary
 Kilowattrel
 Kingambit
 Kingdra
@@ -460,7 +460,7 @@ Klink
 Klinklang
 Koffing
 Komala
-Kommo - o
+Kommo-o
 Koraidon
 Krabby
 Kricketot
@@ -472,7 +472,7 @@ Kyogre
 Kyurem
 Lairon
 Lampent
-Landorus
+Landorus Incarnate
 Lanturn
 Lapras
 Larvesta
@@ -509,7 +509,7 @@ Lurantis
 Luvdisc
 Luxio
 Luxray
-Lycanroc
+Lycanroc Midday
 Mabosstiff
 Machamp
 Machoke
@@ -547,10 +547,10 @@ Medicham
 Meditite
 Meganium
 Melmetal
-Meloetta
+Meloetta Aria
 Meltan
 Meowscarada
-Meowstic
+Meowstic Male
 Meowth
 Mesprit
 Metagross
@@ -565,9 +565,9 @@ Milcery
 Milotic
 Miltank
 Mime Jr.
-Mimikyu
+Mimikyu Disguised
 Minccino
-Minior
+Minior Red Meteor
 Minun
 Miraidon
 Misdreavus
@@ -576,10 +576,10 @@ Moltres
 Monferno
 Morelull
 Morgrem
-Morpeko
+Morpeko Full Belly
 Mothim
-Mr.Mime
-Mr.Rime
+Mr. Mime
+Mr. Rime
 Mudbray
 Mudkip
 Mudsdale
@@ -623,7 +623,7 @@ Omastar
 Onix
 Oranguru
 Orbeetle
-Oricorio
+Oricorio Baile
 Orthworm
 Oshawott
 Overqwil
@@ -679,14 +679,14 @@ Ponyta
 Poochyena
 Popplio
 Porygon
-Porygon - Z
+Porygon-Z
 Porygon2
 Primarina
 Primeape
 Prinplup
 Probopass
 Psyduck
-Pumpkaboo
+Pumpkaboo Average
 Pupitar
 Purrloin
 Purugly
@@ -774,7 +774,7 @@ Servine
 Seviper
 Sewaddle
 Sharpedo
-Shaymin
+Shaymin Land
 Shedinja
 Shelgon
 Shellder
@@ -895,9 +895,9 @@ Terapagos
 Terrakion
 Thievul
 Throh
-Thundurus
+Thundurus Incarnate
 Thwackey
-Ting - Lu
+Ting-Lu
 Tinkatink
 Tinkaton
 Tinkatuff
@@ -911,7 +911,7 @@ Togepi
 Togetic
 Torchic
 Torkoal
-Tornadus
+Tornadus Incarnate
 Torracat
 Torterra
 Totodile
@@ -919,7 +919,7 @@ Toucannon
 Toxapex
 Toxel
 Toxicroak
-Toxtricity
+Toxtricity Amped
 Tranquill
 Trapinch
 Treecko
@@ -932,7 +932,7 @@ Turtonator
 Turtwig
 Tympole
 Tynamo
-Type: Null
+Type Null
 Typhlosion
 Tyranitar
 Tyrantrum
@@ -943,7 +943,7 @@ Unfezant
 Unown
 Ursaluna
 Ursaring
-Urshifu
+Urshifu Single Strike
 Uxie
 Vanillish
 Vanillite
@@ -989,13 +989,13 @@ Wigglytuff
 Wiglett
 Wimpod
 Wingull
-Wishiwashi
-Wo - Chien
+Wishiwashi Solo
+Wo-Chien
 Wobbuffet
 Woobat
 Wooloo
 Wooper
-Wormadam
+Wormadam Plant
 Wugtrio
 Wurmple
 Wynaut
@@ -1022,4 +1022,4 @@ Zoroark
 Zorua
 Zubat
 Zweilous
-Zygarde
+Zygarde 50

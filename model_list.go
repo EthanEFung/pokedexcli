@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -8,6 +9,9 @@ import (
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 	"github.com/ethanefung/pokedexcli/internal/soundex"
 )
+
+var ErrPokemon = errors.New("error getting pokemon")
+var ErrSpecies = errors.New("error getting species")
 
 var encoder = soundex.NewSoundexEncoder()
 
@@ -25,7 +29,7 @@ type item struct {
 
 func (i item) Title() string       { return i.title }
 func (i item) Description() string { return "" }
-func (i item) FilterValue() string { return i.code }
+func (i item) FilterValue() string { return i.title }
 
 func (pl pokelist) Init() tea.Cmd {
 	return nil
@@ -89,9 +93,9 @@ func (fl pokelist) View() string {
 func filterFunc(term string, items []string) []list.Rank {
 	ranks := []list.Rank{}
 	code := encoder.Encode(term)
-	// fmt.Println(code)
 
-	for i, icode := range items {
+	for i, title := range items {
+		icode := encoder.Encode(title)
 		if code[0] != icode[0] {
 			continue
 		}
@@ -120,23 +124,24 @@ func filterFunc(term string, items []string) []list.Rank {
 
 func getPokemonDetails(client pokeapi.Client, name string) tea.Cmd {
 	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", "-")
 	name = strings.ReplaceAll(name, "'", "")
-	name = strings.ReplaceAll(name, ".", "-")
+	name = strings.ReplaceAll(name, ".", "")
 	name = strings.ReplaceAll(name, "♀", "-f")
 	name = strings.ReplaceAll(name, "♂", "-m")
+	name = strings.ReplaceAll(name, " ", "-")
+	name = strings.TrimSpace(name)
 	return tea.Batch(
 		func() tea.Msg {
 			p, err := client.GetPokemon(name)
 			if err != nil {
-				return err
+				return ErrPokemon
 			}
 			return p
 		},
 		func() tea.Msg {
 			ps, err := client.GetPokemonSpecies(name)
 			if err != nil {
-				return err
+				return ErrSpecies
 			}
 			return ps
 		})
