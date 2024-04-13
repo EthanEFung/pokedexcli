@@ -2,10 +2,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ethanefung/pokedexcli/internal"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 	"github.com/ethanefung/pokedexcli/internal/soundex"
 )
@@ -23,12 +26,17 @@ type pokelist struct {
 }
 
 type item struct {
+	id    int
 	title string
-	code  string
+	form  string
 }
 
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return "" }
+func (i item) Title() string {
+	return fmt.Sprintf("#%04d %s", i.id, i.title)
+}
+func (i item) Description() string {
+	return i.form
+}
 func (i item) FilterValue() string { return i.title }
 
 func (pl pokelist) Init() tea.Cmd {
@@ -52,18 +60,19 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case error:
 		pl.err = msg
-	case soundex.Entries:
+	case internal.BasicPokemonInfoEntries:
 		entries := msg
-		for _, e := range entries {
-			pl.items = append(pl.items, item{title: e.Name, code: e.Code})
+		for _, gen := range entries {
+			for _, pkmn := range gen {
+				pl.items = append(pl.items, item{title: pkmn.Name, id: pkmn.ID, form: pkmn.Form})
+			}
 		}
-
 		cmd := pl.list.SetItems(pl.items)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 		selected := pl.list.SelectedItem().(item)
-		cmd = getPokemonDetails(pl.client, selected.Title())
+		cmd = getPokemonDetails(pl.client, strconv.Itoa(selected.id))
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -77,7 +86,7 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		selected, ok := pl.list.SelectedItem().(item)
 		if ok {
-			cmd := getPokemonDetails(pl.client, selected.Title())
+			cmd := getPokemonDetails(pl.client, strconv.Itoa(selected.id))
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}

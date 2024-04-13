@@ -13,7 +13,7 @@ import (
 
 var (
 	alphanumerics  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	ledgerCapacity = 30
+	ledgerCapacity = 100
 )
 
 type Cache struct {

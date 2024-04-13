@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/png"
@@ -11,10 +11,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ethanefung/pokedexcli/internal"
 	"github.com/ethanefung/pokedexcli/internal/filebasedcache"
 	"github.com/ethanefung/pokedexcli/internal/inmemorycache"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
-	"github.com/ethanefung/pokedexcli/internal/soundex"
 )
 
 var docStyle = lipgloss.NewStyle().Margin(1).Border(lipgloss.NormalBorder())
@@ -113,19 +113,12 @@ func (m *model) View() string {
 
 func readPokemonList() tea.Cmd {
 	return func() tea.Msg {
-		f, err := os.OpenFile("./internal/names.txt", os.O_RDONLY, 0o600)
+		b, err := os.ReadFile("./internal/national.json")
 		if err != nil {
 			return err
 		}
-		defer f.Close()
-		s := bufio.NewScanner(f)
-		var entries soundex.Entries = make([]soundex.Entry, 0)
-		encoder := soundex.NewSoundexEncoder()
-		for s.Scan() {
-			text, code := s.Text(), encoder.Encode(s.Text())
-			entries = append(entries, soundex.Entry{Name: text, Code: code})
-		}
-		if err := s.Err(); err != nil {
+		var entries internal.BasicPokemonInfoEntries
+		if err := json.Unmarshal(b, &entries); err != nil {
 			return err
 		}
 		return entries
