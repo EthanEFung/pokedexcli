@@ -3,8 +3,6 @@ package inmemorycache
 import (
 	"sync"
 	"time"
-
-	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
 
 type Cache struct {
@@ -17,7 +15,7 @@ type cacheEntry struct {
 	createdAt time.Time
 }
 
-func NewCache(interval time.Duration) pokeapi.Cache {
+func NewCache(interval time.Duration) *Cache {
 	c := Cache{
 		cache: make(map[string]cacheEntry),
 		mux:   &sync.Mutex{},

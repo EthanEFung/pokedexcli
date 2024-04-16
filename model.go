@@ -11,9 +11,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ethanefung/pokedexcli/internal"
 	"github.com/ethanefung/pokedexcli/internal/filebasedcache"
 	"github.com/ethanefung/pokedexcli/internal/inmemorycache"
+	"github.com/ethanefung/pokedexcli/internal/namefinder"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
 
@@ -113,11 +113,11 @@ func (m *model) View() string {
 
 func readPokemonList() tea.Cmd {
 	return func() tea.Msg {
-		b, err := os.ReadFile("./internal/national.json")
+		b, err := os.ReadFile("./internal/namefinder/national.json")
 		if err != nil {
 			return err
 		}
-		var entries internal.BasicPokemonInfoEntries
+		var entries namefinder.BasicPokemonInfoEntries
 		if err := json.Unmarshal(b, &entries); err != nil {
 			return err
 		}

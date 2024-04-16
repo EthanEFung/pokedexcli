@@ -3,12 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
+	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/ethanefung/pokedexcli/internal"
+	"github.com/ethanefung/pokedexcli/internal/namefinder"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 	"github.com/ethanefung/pokedexcli/internal/soundex"
 )
@@ -17,6 +16,8 @@ var ErrPokemon = errors.New("error getting pokemon")
 var ErrSpecies = errors.New("error getting species")
 
 var encoder = soundex.NewSoundexEncoder()
+var pokemonPath = filepath.Join("./", "internal", "namefinder", "pokemon.json")
+var nf = namefinder.NewNameFinder(pokemonPath)
 
 type pokelist struct {
 	err    error
@@ -26,18 +27,18 @@ type pokelist struct {
 }
 
 type item struct {
-	id    int
-	title string
-	form  string
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Form string `json:"form"`
 }
 
 func (i item) Title() string {
-	return fmt.Sprintf("#%04d %s", i.id, i.title)
+	return fmt.Sprintf("#%04d %s", i.ID, i.Name)
 }
 func (i item) Description() string {
-	return i.form
+	return i.Form
 }
-func (i item) FilterValue() string { return i.title }
+func (i item) FilterValue() string { return i.Name }
 
 func (pl pokelist) Init() tea.Cmd {
 	return nil
@@ -60,11 +61,11 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case error:
 		pl.err = msg
-	case internal.BasicPokemonInfoEntries:
+	case namefinder.BasicPokemonInfoEntries:
 		entries := msg
 		for _, gen := range entries {
 			for _, pkmn := range gen {
-				pl.items = append(pl.items, item{title: pkmn.Name, id: pkmn.ID, form: pkmn.Form})
+				pl.items = append(pl.items, item{Name: pkmn.Name, ID: pkmn.ID, Form: pkmn.Form})
 			}
 		}
 		cmd := pl.list.SetItems(pl.items)
@@ -72,7 +73,9 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 		selected := pl.list.SelectedItem().(item)
-		cmd = getPokemonDetails(pl.client, strconv.Itoa(selected.id))
+		info := namefinder.BasicPokemonInfo{ID: selected.ID, Name: selected.Name, Form: selected.Form}
+
+		cmd = getPokemonDetails(pl.client, info)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -85,8 +88,9 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 		selected, ok := pl.list.SelectedItem().(item)
+		info := namefinder.BasicPokemonInfo{ID: selected.ID, Name: selected.Name, Form: selected.Form}
 		if ok {
-			cmd := getPokemonDetails(pl.client, strconv.Itoa(selected.id))
+			cmd := getPokemonDetails(pl.client, info)
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
@@ -131,14 +135,8 @@ func filterFunc(term string, items []string) []list.Rank {
 	return ranks
 }
 
-func getPokemonDetails(client pokeapi.Client, name string) tea.Cmd {
-	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, "'", "")
-	name = strings.ReplaceAll(name, ".", "")
-	name = strings.ReplaceAll(name, "♀", "-f")
-	name = strings.ReplaceAll(name, "♂", "-m")
-	name = strings.ReplaceAll(name, " ", "-")
-	name = strings.TrimSpace(name)
+func getPokemonDetails(client pokeapi.Client, info namefinder.BasicPokemonInfo) tea.Cmd {
+	name := nf.Find(info)
 	return tea.Batch(
 		func() tea.Msg {
 			p, err := client.GetPokemon(name)

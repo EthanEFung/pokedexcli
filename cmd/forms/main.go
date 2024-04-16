@@ -6,16 +6,16 @@ import (
 	"log"
 	"os"
 
-	"github.com/ethanefung/pokedexcli/internal"
+	"github.com/ethanefung/pokedexcli/internal/namefinder"
 )
 
 func main() {
 	// we want to search the national.json file for all pokemon with forms and print them to the screen
-	file, err := os.ReadFile("./internal/national.json")
+	file, err := os.ReadFile("./internal/namefinder/national.json")
 	if err != nil {
 		log.Fatalf("Error reading file: %v", err)
 	}
-	var generations internal.BasicPokemonInfoEntries
+	var generations namefinder.BasicPokemonInfoEntries
 	if err := json.Unmarshal(file, &generations); err != nil {
 		log.Fatalf("Error unmarshalling json: %v", err)
 	}

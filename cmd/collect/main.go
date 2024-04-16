@@ -8,17 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethanefung/pokedexcli/internal"
+	"github.com/ethanefung/pokedexcli/internal/namefinder"
 	"github.com/gocolly/colly/v2"
 )
 
 func main() {
-	list := internal.BasicPokemonInfoEntries{}
+	list := namefinder.BasicPokemonInfoEntries{}
 	c := colly.NewCollector()
 
 	c.OnHTML("table.roundy", func(table *colly.HTMLElement) {
 		var id int
-		generation := []internal.BasicPokemonInfo{}
+		generation := []namefinder.BasicPokemonInfo{}
 		table.ForEach("tr[style=\"background:#FFF\"]", func(_ int, tr *colly.HTMLElement) {
 			td := tr.DOM.Find("td:has(small)")
 			aSel := td.Find("a")
@@ -42,7 +42,7 @@ func main() {
 				}
 			})
 
-			pokemon := internal.BasicPokemonInfo{
+			pokemon := namefinder.BasicPokemonInfo{
 				ID:   id,
 				Name: aSel.Text(),
 				Form: smallSel.Text(),
@@ -60,7 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error marshalling json: %v", err)
 	}
-	err = os.WriteFile("./internal/national.json", b, 0644)
+	err = os.WriteFile("./internal/namefinder/national.json", b, 0644)
 	if err != nil {
 		log.Fatalf("Error writing file: %v", err)
 	}

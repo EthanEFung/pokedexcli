@@ -1,4 +1,4 @@
-package internal
+package namefinder
 
 type BasicPokemonInfo struct {
 	ID   int    `json:"id"`
