@@ -63,6 +63,9 @@ func (nf NameFinder) Find(info BasicPokemonInfo) string {
 		if unicode.IsLetter(r) {
 			b.WriteRune(unicode.ToLower(r))
 		}
+		if unicode.IsDigit(r) {
+			b.WriteRune(unicode.ToLower(r))
+		}
 	}
 	input := b.String()
 	results := []fuzzy.Match{}
