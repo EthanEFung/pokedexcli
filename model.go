@@ -17,7 +17,8 @@ import (
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1).Border(lipgloss.NormalBorder())
+var detailsStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder())
+var listStyle = detailsStyle.Copy().Padding(2, 5, 1, 2)
 
 type model struct {
 	client pokeapi.Client
@@ -72,6 +73,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+	case namefinder.BasicPokemonInfo:
+		m.detail, cmd = m.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	case pokeapi.Pokemon:
 		m.detail, cmd = m.detail.Update(msg)
 		if cmd != nil {
@@ -104,8 +110,8 @@ func (m *model) View() string {
 	if m.err != nil {
 		return fmt.Sprintf("Uh oh, something happened: %+v", m.err)
 	}
-	listView := docStyle.Render(m.list.View())
-	deetsView := docStyle.Render(m.detail.View())
+	listView := listStyle.Render(m.list.View())
+	deetsView := detailsStyle.Render(m.detail.View())
 	view := lipgloss.JoinHorizontal(lipgloss.Left, listView, deetsView)
 
 	return view

@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/ethanefung/pokedexcli/internal/namefinder"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 	"github.com/qeesung/image2ascii/convert"
 )
@@ -16,6 +17,7 @@ type detail struct {
 	err          error
 	no           int
 	name         string
+	form         string
 	description  string
 	asciiSprite  string
 	height       string
@@ -92,9 +94,11 @@ func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case error:
 		d.err = msg
-	case pokeapi.Pokemon:
+	case namefinder.BasicPokemonInfo:
 		d.name = msg.Name
 		d.no = msg.ID
+		d.form = msg.Form
+	case pokeapi.Pokemon:
 		d.height = decimetresToImperialUnits(msg.Height)
 		d.weight = hectogramsToPounds(msg.Weight)
 		d.types = []string{}
@@ -149,7 +153,7 @@ func (d detail) View() string {
 	if name != "" {
 		name = strings.ToTitle(string(name[0])) + name[1:]
 	}
-	s += fmt.Sprintf("\n\n    No #%04d %s\n", d.no, name)
+	s += fmt.Sprintf("\n\n    No. %04d %s %s\n", d.no, name, d.form)
 	if d.asciiSprite != "" {
 		s += d.asciiSprite + "\n"
 	}

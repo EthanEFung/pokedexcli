@@ -47,7 +47,9 @@ func (pl pokelist) Init() tea.Cmd {
 func initializePokelist(client pokeapi.Client) *pokelist {
 	items := []list.Item{}
 	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	l.Title = "National Dex"
 	l.Filter = filterFunc
+	l.SetShowPagination(false)
 	return &pokelist{
 		list:   l,
 		items:  items,
@@ -80,8 +82,8 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		pl.list.SetSize(msg.Width-h, msg.Height-v)
+		h, v := detailsStyle.GetFrameSize()
+		pl.list.SetSize(msg.Width-h-1, msg.Height-v-3)
 	default:
 		pl.list, cmd = pl.list.Update(msg)
 		if cmd != nil {
@@ -106,6 +108,9 @@ func (fl pokelist) View() string {
 func filterFunc(term string, items []string) []list.Rank {
 	ranks := []list.Rank{}
 	code := encoder.Encode(term)
+	if len(code) == 0 {
+		return ranks
+	}
 
 	for i, title := range items {
 		icode := encoder.Encode(title)
@@ -138,6 +143,9 @@ func filterFunc(term string, items []string) []list.Rank {
 func getPokemonDetails(client pokeapi.Client, info namefinder.BasicPokemonInfo) tea.Cmd {
 	name := nf.Find(info)
 	return tea.Batch(
+		func() tea.Msg {
+			return info
+		},
 		func() tea.Msg {
 			p, err := client.GetPokemon(name)
 			if err != nil {

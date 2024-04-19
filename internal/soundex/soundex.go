@@ -28,6 +28,9 @@ func (se *SoundexEncoder) Encode(input string) string {
 	runes := clean(input)
 
 	result := []rune{'0', '0', '0', '0'}
+	if len(runes) == 0 {
+		return string(runes)
+	}
 	lastChar, ok := mapper[runes[0]]
 	if ok {
 		result[0] = runes[0]
