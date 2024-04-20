@@ -13,9 +13,13 @@ import (
 	"github.com/qeesung/image2ascii/convert"
 )
 
+var detailStyle = lipgloss.NewStyle()
+
 type detail struct {
+	client       pokeapi.Client
 	err          error
 	no           int
+	viewHeight   int
 	name         string
 	form         string
 	description  string
@@ -90,10 +94,13 @@ var pTypeStylesMap = map[string]pTypeStyle{
 func (d detail) Init() tea.Cmd { return nil }
 
 func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	d.err = nil
 	switch msg := msg.(type) {
 	case error:
 		d.err = msg
+	case tea.WindowSizeMsg:
+		d.viewHeight = msg.Height - 2
 	case namefinder.BasicPokemonInfo:
 		d.name = msg.Name
 		d.no = msg.ID
@@ -121,6 +128,7 @@ func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				d.stats.speed = fmt.Sprintf("%d", s.BaseStat)
 			}
 		}
+		cmd = getPokemonSpecies(d.client, msg)
 
 	case pokeapi.PokemonSpecies:
 		// find the first english entry and use as the description
@@ -140,7 +148,7 @@ func (d detail) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		d.asciiSprite = converter.Image2ASCIIString(msg, &options)
 	}
-	return d, nil
+	return d, cmd
 }
 
 func (d detail) View() string {
@@ -160,7 +168,7 @@ func (d detail) View() string {
 	s += d.viewNumbers()
 	s += d.viewDescription() + "\n"
 
-	return s
+	return detailStyle.Height(d.viewHeight).Render(s)
 }
 
 func (d detail) viewNumbers() string {
@@ -168,7 +176,7 @@ func (d detail) viewNumbers() string {
 	// lipgloss.
 	// 	s += strings.Repeat("-", 64) + "\n\n"
 	var left string
-	left += "    types: "
+	left += "    types : "
 	for _, t := range d.types {
 		pts := pTypeStylesMap[t]
 		left += pts.String()
@@ -223,4 +231,14 @@ func decimetresToImperialUnits(decimetres int) string {
 func hectogramsToPounds(hectograms int) string {
 	var pounds float64 = float64(hectograms) * 0.220462
 	return fmt.Sprintf("%.2f lbs", pounds)
+}
+
+func getPokemonSpecies(client pokeapi.Client, p pokeapi.Pokemon) tea.Cmd {
+	return func() tea.Msg {
+		ps, err := client.GetPokemonSpecies(p.Species.Name)
+		if err != nil {
+			return ErrSpecies
+		}
+		return ps
+	}
 }

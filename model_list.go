@@ -77,7 +77,7 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		selected := pl.list.SelectedItem().(item)
 		info := namefinder.BasicPokemonInfo{ID: selected.ID, Name: selected.Name, Form: selected.Form}
 
-		cmd = getPokemonDetails(pl.client, info)
+		cmd = getPokemonBasicInfo(pl.client, info)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -92,7 +92,7 @@ func (pl pokelist) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		selected, ok := pl.list.SelectedItem().(item)
 		info := namefinder.BasicPokemonInfo{ID: selected.ID, Name: selected.Name, Form: selected.Form}
 		if ok {
-			cmd := getPokemonDetails(pl.client, info)
+			cmd := getPokemonBasicInfo(pl.client, info)
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
@@ -140,7 +140,7 @@ func filterFunc(term string, items []string) []list.Rank {
 	return ranks
 }
 
-func getPokemonDetails(client pokeapi.Client, info namefinder.BasicPokemonInfo) tea.Cmd {
+func getPokemonBasicInfo(client pokeapi.Client, info namefinder.BasicPokemonInfo) tea.Cmd {
 	name := nf.Find(info)
 	return tea.Batch(
 		func() tea.Msg {
@@ -153,11 +153,5 @@ func getPokemonDetails(client pokeapi.Client, info namefinder.BasicPokemonInfo) 
 			}
 			return p
 		},
-		func() tea.Msg {
-			ps, err := client.GetPokemonSpecies(name)
-			if err != nil {
-				return ErrSpecies
-			}
-			return ps
-		})
+	)
 }

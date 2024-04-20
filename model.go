@@ -52,7 +52,9 @@ func initialModel(cacheType string) *model {
 
 	pokelist := initializePokelist(client)
 
-	deets := detail{}
+	deets := detail{
+		client: client,
+	}
 	return &model{
 		client: client,
 		list:   pokelist,
@@ -93,6 +95,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case image.Image:
 		// currently the only image that is processed is for the details view
 		m.detail, cmd = m.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	case tea.WindowSizeMsg:
+		m.detail, cmd = m.detail.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		m.list, cmd = m.list.Update(msg)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
