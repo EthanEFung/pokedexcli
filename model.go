@@ -6,13 +6,10 @@ import (
 	"image"
 	_ "image/png"
 	"os"
-	"path/filepath"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/ethanefung/pokedexcli/internal/filebasedcache"
-	"github.com/ethanefung/pokedexcli/internal/inmemorycache"
 	"github.com/ethanefung/pokedexcli/internal/namefinder"
 	"github.com/ethanefung/pokedexcli/internal/pokeapi"
 )
@@ -27,27 +24,7 @@ type model struct {
 	err    error
 }
 
-func initialModel(cacheType string) *model {
-	fpath, err := filepath.Abs("./internal/filebasedcache/ledger.txt")
-	if err != nil {
-		fmt.Printf("could not find path to ledger %v", err)
-		os.Exit(1)
-	}
-	dirpath, err := filepath.Abs("./internal/filebasedcache/files")
-	ledgerFile, err := os.OpenFile(fpath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0o600)
-
-	if err != nil {
-		fmt.Printf("could not open file in write mode %v", err)
-		os.Exit(1)
-	}
-
-	cache := filebasedcache.NewCache(dirpath, ledgerFile)
-	if cacheType != "inmemory" && cacheType != "filebased" {
-		fmt.Printf("unsupported cache type '%s' specified", cacheType)
-		os.Exit(1)
-	} else if cacheType == "inmemory" {
-		cache = inmemorycache.NewCache(time.Hour * 2)
-	}
+func initialModel(cache pokeapi.Cache) *model {
 	client := pokeapi.NewClient(time.Hour, cache)
 
 	pokelist := initializePokelist(client)

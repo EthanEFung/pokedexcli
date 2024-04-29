@@ -2,3 +2,4 @@ pokedexcli
 
 # add filebased cache stuff
 internal/filebasedcache/ledger.txt
+internal/boltcache/pokedex.db
