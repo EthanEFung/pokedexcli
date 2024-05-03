@@ -1,6 +1,6 @@
 # Pokedexcli
 
-![](https://github.com/ethanefung/pokedexcli/out.gif)
+![](./out.gif)
 
 ## Overview
 Here is a personal project built using [Go](https://go.dev/) and [Bubble Tea](https://github.com/charmbracelet/bubbletea/tree/master). It allows users to search for various pokemon and retrieve basic information about pokemon in the national pokedex. It's purpose is personal: an outlet for me to explore the Go standard library and some of the community tools like [Boltdb](https://github.com/boltdb/bolt) and the [Charm libraries](https://charm.sh/libs/). Hope you'll like what you see!
