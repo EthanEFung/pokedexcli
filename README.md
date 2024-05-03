@@ -38,7 +38,7 @@ Run the application:
 ./pokedexcli
 ```
 
-By default boltdb will be used for the cache. However, you can pass a flag to explore different caching strategies
+By default Boltdb will be used for the cache. However, you can pass a flag to explore different caching strategies
 ```bash
 ./pokedexcli -cache filebased
 ```
