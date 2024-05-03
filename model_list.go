@@ -47,7 +47,7 @@ func (pl pokelist) Init() tea.Cmd {
 func initializePokelist(client pokeapi.Client) *pokelist {
 	items := []list.Item{}
 	l := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "National Dex"
+	l.Title = "National Pokedex"
 	l.Filter = filterFunc
 	l.SetShowPagination(false)
 	return &pokelist{
